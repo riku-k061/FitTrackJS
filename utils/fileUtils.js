@@ -3,33 +3,38 @@ const path = require('path');
 const config = require('../config/config');
 
 // In-memory cache, write queue, locks and timers
-const fileCache = {};
+const fileCache = new Map();
 const writeQueue = {};
 const fileLocks = {};
 const batchTimers = {};
 const BATCH_INTERVAL = 100;
 
+// Additional variables for the second cache system
+const writeQueues = new Map();
+const queueStatus = new Map();
+const updateCallbacks = new Map();
+const DEFAULT_BATCH_WINDOW = 100;
+
 function initializeCache(filename) {
-  if (!(filename in fileCache)) fileCache[filename] = null;
   if (!(filename in writeQueue)) writeQueue[filename] = [];
   if (!(filename in fileLocks)) fileLocks[filename] = false;
 }
 
 async function readJSONFile(filename) {
   initializeCache(filename);
-  if (fileCache[filename] !== null) {
-    return JSON.parse(JSON.stringify(fileCache[filename]));
+  if (fileCache.has(filename)) {
+    return JSON.parse(JSON.stringify(fileCache.get(filename)));
   }
 
   const filePath = path.join(config.dataPath, filename);
   try {
     const raw = await fs.readFile(filePath, 'utf8');
     const data = JSON.parse(raw);
-    fileCache[filename] = data;
+    fileCache.set(filename, data);
     return JSON.parse(JSON.stringify(data));
   } catch (err) {
     if (err.code === 'ENOENT') {
-      fileCache[filename] = [];
+      fileCache.set(filename, []);
       return [];
     }
     throw err;
@@ -49,7 +54,7 @@ async function processWriteQueue(filename) {
   try {
     const dataToWrite = writeQueue[filename].pop();
     writeQueue[filename] = [];
-    fileCache[filename] = dataToWrite;
+    fileCache.set(filename, dataToWrite);
 
     const filePath = path.join(config.dataPath, filename);
     await fs.mkdir(path.dirname(filePath), { recursive: true });
@@ -64,20 +69,20 @@ async function processWriteQueue(filename) {
 async function writeJSONFile(filename, data) {
   initializeCache(filename);
   writeQueue[filename].push(data);
-  fileCache[filename] = data;
+  fileCache.set(filename, data);
   if (batchTimers[filename]) clearTimeout(batchTimers[filename]);
   batchTimers[filename] = setTimeout(() => processWriteQueue(filename), BATCH_INTERVAL);
   return Promise.resolve();
 }
 
 async function forceWriteJSONFile(filename) {
-  if (!fileCache[filename]) return;
+  if (!fileCache.has(filename)) return;
   if (batchTimers[filename]) clearTimeout(batchTimers[filename]);
   fileLocks[filename] = true;
   try {
     const filePath = path.join(config.dataPath, filename);
     await fs.mkdir(path.dirname(filePath), { recursive: true });
-    await fs.writeFile(filePath, JSON.stringify(fileCache[filename], null, 2), 'utf8');
+    await fs.writeFile(filePath, JSON.stringify(fileCache.get(filename), null, 2), 'utf8');
     writeQueue[filename] = [];
   } catch (err) {
     console.error(`Error force-writing ${filename}:`, err);
@@ -88,7 +93,7 @@ async function forceWriteJSONFile(filename) {
 }
 
 function invalidateCache(filename) {
-  fileCache[filename] = null;
+  fileCache.delete(filename);
 }
 
 async function flushAllWrites() {

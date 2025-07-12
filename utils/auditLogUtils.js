@@ -53,36 +53,6 @@ async function prepareDeleteAuditLog(entityType, entityId, deletedEntity, actor)
   };
 }
 
-function computeDiff(oldVal, newVal) {
-  if (!oldVal) return { added: newVal };
-  if (!newVal) return { removed: oldVal };
-  const diff = {};
-  const keys = new Set([...Object.keys(oldVal), ...Object.keys(newVal)]);
-  for (const key of keys) {
-    if (key === 'id' || key === 'password') continue;
-    if (JSON.stringify(oldVal[key]) !== JSON.stringify(newVal[key])) {
-      diff[key] = { old: oldVal[key], new: newVal[key] };
-    }
-  }
-  return diff;
-}
-
-async function createAuditLog(params) {
-  const { entityType, entityId, action, userId, changes } = params;
-  const diff = changes.oldValues || changes.newValues
-    ? computeDiff(changes.oldValues, changes.newValues)
-    : changes;
-  return {
-    id: uuidv4(),
-    timestamp: new Date().toISOString(),
-    entityType,
-    entityId,
-    action,
-    userId,
-    changes: diff
-  };
-}
-
 async function logAuditEvent(params) {
   const entry = await createAuditLog(params);
   const logs = await readDataFile(AUDIT_LOG_FILE);

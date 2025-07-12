@@ -161,9 +161,9 @@ function invalidateStatsCache(userId = null) {
 }
 
 // Invalidate on workout data change
-const { fileCache } = require('./fileUtils');
-if (typeof fileCache.onUpdate === 'function') {
-  fileCache.onUpdate(WORKOUT_FILE, () => invalidateStatsCache());
+const { onUpdate } = require('./fileUtils');
+if (typeof onUpdate === 'function') {
+  onUpdate(WORKOUT_FILE, () => invalidateStatsCache());
 }
 
 module.exports = { getUserWorkoutStats, invalidateStatsCache };

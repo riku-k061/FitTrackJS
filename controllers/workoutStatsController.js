@@ -5,7 +5,7 @@ async function getUserStats(req, res, next) {
     const { userId } = req.params;
     const forceRefresh = req.query.refresh === 'true';
 
-    if (userId !== req.user.id && !['admin', 'coach'].includes(req.user.role)) {
+    if (userId !== req.user.sub && !['admin', 'coach'].includes(req.user.role)) {
       return res.status(403).json({ message: 'Access denied. Not authorized to view these statistics.' });
     }
 

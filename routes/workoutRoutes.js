@@ -7,7 +7,7 @@ const {
   removeWorkout
 } = require('../controllers/workoutController');
 const { getUserStats } = require('../controllers/workoutStatsController');
-const { authenticate } = require('../middleware/authMiddleware');
+const authenticate = require('../middleware/authMiddleware');
 
 const router = express.Router();
 router.use(authenticate);

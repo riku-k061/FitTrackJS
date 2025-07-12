@@ -7,7 +7,7 @@ const { getFilteredData, invalidateIndex } = require('./indexingUtils');
 const { enrichWorkoutsWithUserInfo } = require('./userCacheUtils');
 const { backupFile, restoreFromBackup } = require('./transactionUtils');
 const { readJSONFile, writeJSONFile } = require('./fileUtils');
-const WORKOUTS_FILE = 'workouts.json';
+const WORKOUT_FILE = 'data/workouts.json';
 
 
 async function getWorkouts(options = {}) {
@@ -34,25 +34,18 @@ async function createWorkout(workoutData) {
   const workout = await WorkoutLog.create(workoutData);
   const workouts = await readDataFile(WORKOUT_FILE);
 
-  const result = await executeTransaction({
+  const result = await executeTransaction([{
     execute: async () => {
       workouts.push(workout.toJSON());
       await writeDataFile(WORKOUT_FILE, workouts);
       invalidateIndex(WORKOUT_FILE);
-      await logAuditEvent({
-        entityType: 'workout',
-        entityId: workout.id,
-        action: 'create',
-        userId: workoutData.userId,
-        changes: { newValues: workout.toJSON(), oldValues: null }
-      });
       const [enriched] = await enrichWorkoutsWithUserInfo([workout.toJSON()]);
       return enriched;
     },
     rollback: async () => {}
-  });
+  }]);
 
-  return result;
+  return result[0];
 }
 
 async function updateWorkout(id, workoutData) {
@@ -64,25 +57,18 @@ async function updateWorkout(id, workoutData) {
   const updatedData = { ...oldWorkout, ...workoutData, id };
   const workout = await WorkoutLog.create(updatedData);
 
-  const result = await executeTransaction({
+  const result = await executeTransaction([{
     execute: async () => {
       workouts[idx] = workout.toJSON();
       await writeDataFile(WORKOUT_FILE, workouts);
       invalidateIndex(WORKOUT_FILE);
-      await logAuditEvent({
-        entityType: 'workout',
-        entityId: workout.id,
-        action: 'update',
-        userId: workoutData.userId || oldWorkout.userId,
-        changes: { newValues: workout.toJSON(), oldValues: oldWorkout }
-      });
       const [enriched] = await enrichWorkoutsWithUserInfo([workout.toJSON()]);
       return enriched;
     },
     rollback: async () => {}
-  });
+  }]);
 
-  return result;
+  return result[0];
 }
 
 async function deleteWorkout(id, userId) {
@@ -92,37 +78,30 @@ async function deleteWorkout(id, userId) {
 
   const toDelete = workouts[idx];
 
-  const result = await executeTransaction({
+  const result = await executeTransaction([{
     execute: async () => {
       workouts.splice(idx, 1);
       await writeDataFile(WORKOUT_FILE, workouts);
       invalidateIndex(WORKOUT_FILE);
-      await logAuditEvent({
-        entityType: 'workout',
-        entityId: id,
-        action: 'delete',
-        userId,
-        changes: { newValues: null, oldValues: toDelete }
-      });
       return toDelete;
     },
     rollback: async () => {}
-  });
+  }]);
 
-  return result;
+  return result[0];
 }
 async function prepareDeleteUserWorkouts(userId) {
-  await backupFile(WORKOUTS_FILE);
-  const workouts = await readJSONFile(WORKOUTS_FILE);
+  await backupFile('workouts.json');
+  const workouts = await readJSONFile('workouts.json');
   const userWorkouts = workouts.filter(w => w.userId === userId);
   const updated = workouts.filter(w => w.userId !== userId);
 
   return {
     execute: async () => {
-      await writeJSONFile(WORKOUTS_FILE, updated);
+      await writeJSONFile('workouts.json', updated);
       return { workoutsRemoved: userWorkouts.length };
     },
-    rollback: async () => restoreFromBackup(WORKOUTS_FILE)
+    rollback: async () => restoreFromBackup('workouts.json')
   };
 }
 

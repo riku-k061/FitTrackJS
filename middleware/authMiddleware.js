@@ -8,7 +8,7 @@ function jwtMiddleware(req, res, next) {
   const token = authHeader.split(' ')[1];
   const decoded = verifyAccessToken(token);
   if (!decoded) {
-    return res.status(401).json({ success: false, error: 'Invalid or expired token' });
+    return res.status(401).json({ success: false, error: { message: 'Invalid or expired token' } });
   }
   req.user = decoded;
   next();

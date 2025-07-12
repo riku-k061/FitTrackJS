@@ -24,11 +24,11 @@ async function getWorkoutsWithFilters(req, res, next) {
     };
 
     // authorization
-    if (userId && userId!==req.user.id && !['admin','coach'].includes(req.user.role)) {
+    if (userId && userId!==req.user.sub && !['admin','coach'].includes(req.user.role)) {
       return res.status(403).json({ message: 'Not authorized' });
     }
     if (!userId && !['admin','coach'].includes(req.user.role)) {
-      opts.userId = req.user.id;
+      opts.userId = req.user.sub;
     }
 
     const result = await getWorkouts(opts);
@@ -44,7 +44,7 @@ async function getWorkout(req, res, next) {
     const { includeUser='true' } = req.query;
     const wk = await getWorkoutById(id, includeUser==='true');
     if (!wk) return res.status(404).json({ message: 'Not found' });
-    if (wk.userId!==req.user.id && !['admin','coach'].includes(req.user.role)) {
+    if (wk.userId!==req.user.sub && !['admin','coach'].includes(req.user.role)) {
       return res.status(403).json({ message: 'Not authorized' });
     }
     res.json(wk);
@@ -53,10 +53,15 @@ async function getWorkout(req, res, next) {
 
 async function createNewWorkout(req, res, next) {
   try {
-    const data = { ...req.body, userId: req.user.id };
+    const data = { ...req.body, userId: req.user.sub };
     const wk = await createWorkout(data);
     res.status(201).json(wk);
-  } catch (err) { next(err); }
+  } catch (err) {
+    if (err.message && err.message.includes('Invalid workout data:')) {
+      return res.status(400).json({ error: { message: err.message } });
+    }
+    next(err);
+  }
 }
 
 async function updateExistingWorkout(req, res, next) {
@@ -64,7 +69,7 @@ async function updateExistingWorkout(req, res, next) {
     const { id } = req.params;
     const existing = await getWorkoutById(id);
     if (!existing) return res.status(404).json({ message:'Not found' });
-    if (existing.userId!==req.user.id && req.user.role!=='admin') {
+    if (existing.userId!==req.user.sub && req.user.role!=='admin') {
       return res.status(403).json({ message:'Not authorized' });
     }
     const wk = await updateWorkout(id, { ...req.body, userId: existing.userId });
@@ -77,10 +82,10 @@ async function removeWorkout(req, res, next) {
     const { id } = req.params;
     const existing = await getWorkoutById(id);
     if (!existing) return res.status(404).json({ message:'Not found' });
-    if (existing.userId!==req.user.id && req.user.role!=='admin') {
+    if (existing.userId!==req.user.sub && req.user.role!=='admin') {
       return res.status(403).json({ message:'Not authorized' });
     }
-    await deleteWorkout(id, req.user.id);
+    await deleteWorkout(id, req.user.sub);
     res.status(204).send();
   } catch (err) { next(err); }
 }

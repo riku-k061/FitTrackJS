@@ -28,14 +28,15 @@ async function validateWorkout(workout) {
       if (!Number.isInteger(num)) {
         errors.push(`${field} must be an integer`);
       } else if ((field==='reps' || field==='sets') ? num<0 : num<=0) {
-        errors.push(`${field} must be a ${desc}`);
+        const fieldName = field === 'duration' ? 'Duration' : field;
+        errors.push(`${fieldName} must be a ${desc}`);
       }
     }
   });
 
   if (workout.exerciseType?.toLowerCase()==='strength' &&
       (!(workout.reps) || !(workout.sets))) {
-    errors.push('Reps and sets are required for strength workouts');
+    errors.push('reps and sets are required for strength workouts');
   }
 
   return { isValid: errors.length===0, errors };
