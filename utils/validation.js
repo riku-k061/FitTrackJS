@@ -1,5 +1,45 @@
+const { userExists } = require('./userCacheUtils');
+const validExerciseTypes = ['cardio','strength','flexibility'];
 const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/;
+
+async function validateWorkout(workout) {
+  const errors = [];
+  if (!workout.userId) {
+    errors.push('UserId is required');
+  } else {
+    const exists = await userExists(workout.userId);
+    if (!exists) errors.push(`User ${workout.userId} does not exist`);
+  }
+
+  if (!workout.exerciseType) {
+    errors.push('Exercise type is required');
+  } else if (!validExerciseTypes.includes(workout.exerciseType.toLowerCase())) {
+    errors.push(`Exercise type must be one of: ${validExerciseTypes.join(', ')}`);
+  }
+
+  [['duration','positive integer'],
+   ['caloriesBurned','positive integer'],
+   ['reps','non-negative integer'],
+   ['sets','non-negative integer']
+  ].forEach(([field, desc]) => {
+    if (workout[field] !== undefined) {
+      const num = Number(workout[field]);
+      if (!Number.isInteger(num)) {
+        errors.push(`${field} must be an integer`);
+      } else if ((field==='reps' || field==='sets') ? num<0 : num<=0) {
+        errors.push(`${field} must be a ${desc}`);
+      }
+    }
+  });
+
+  if (workout.exerciseType?.toLowerCase()==='strength' &&
+      (!(workout.reps) || !(workout.sets))) {
+    errors.push('Reps and sets are required for strength workouts');
+  }
+
+  return { isValid: errors.length===0, errors };
+}
 
 function validateUser(userData, existingUsers = [], currentUserId = null) {
   const errors = [];
@@ -48,4 +88,4 @@ function validateUser(userData, existingUsers = [], currentUserId = null) {
   return { isValid: errors.length === 0, errors };
 }
 
-module.exports = { validateUser };
+module.exports = { validateUser, validateWorkout };
