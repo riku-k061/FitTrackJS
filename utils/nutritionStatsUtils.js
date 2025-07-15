@@ -10,9 +10,10 @@ function hasFresh(key) {
 }
 
 function createEmpty(timeframe) {
+  const emptyMeal = {calories:0,protein:0,carbs:0,fat:0,count:0};
   return {
     summary: { totalCalories:0,totalProtein:0,totalCarbs:0,totalFat:0, dailyAvgCalories:0,dailyAvgProtein:0,dailyAvgCarbs:0,dailyAvgFat:0,completeDays:0 },
-    byMealType: { breakfast:{calories:0,protein:0,carbs:0,fat:0,count:0}, lunch:{...}, dinner:{...}, snack:{...} },
+    byMealType: { breakfast:{...emptyMeal}, lunch:{...emptyMeal}, dinner:{...emptyMeal}, snack:{...emptyMeal} },
     periods:{},
     metadata:{ timeframe, startDate:new Date().toISOString().split('T')[0], endDate:new Date().toISOString().split('T')[0], totalLogs:0, generatedAt:new Date().toISOString() }
   };
