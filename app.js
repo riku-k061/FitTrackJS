@@ -2,6 +2,7 @@ const express = require('express');
 const authRoutes    = require('./routes/authRoutes');
 const userRoutes    = require('./routes/userRoutes');
 const workoutRoutes = require('./routes/workoutRoutes');
+const nutritionRoutes = require('./routes/nutritionRoutes');
 const errorHandler = require('./middleware/errorHandler');
 const { buildIndexes } = require('./utils/indexingUtils');
 
@@ -24,6 +25,7 @@ app.use(express.json());
 app.use('/auth', authRoutes);
 app.use('/users', userRoutes);
 app.use('/workouts', workoutRoutes);
+app.use('/api/nutrition', nutritionRoutes);
 
 app.use(errorHandler);
 module.exports = app;
