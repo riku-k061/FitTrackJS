@@ -36,6 +36,12 @@ exports.getGoalById = async (req,res,next) => {
   try {
     const g = await model.getGoalById(req.params.id);
     if (!g) throw createError(404,'Fitness goal not found');
+    
+    // Check ownership (only the user who owns the goal or admin can access)
+    if (g.userId !== req.user.sub && req.user.role !== 'admin') {
+      throw createError(403, 'Access denied');
+    }
+    
     res.json({ success:true, data: await enrich(g) });
   } catch(err){ next(err) }
 };
@@ -55,6 +61,11 @@ exports.updateGoal = async (req,res,next) => {
     const old = await model.getGoalById(req.params.id);
     if (!old) throw createError(404,'Fitness goal not found');
 
+    // Check ownership (only the user who owns the goal or admin can update)
+    if (old.userId !== req.user.sub && req.user.role !== 'admin') {
+      throw createError(403, 'Access denied');
+    }
+
     if (req.body.userId && req.body.userId!==old.userId && !await userSvc.exists(req.body.userId))
       throw createError(400,'User does not exist');
 
@@ -67,7 +78,32 @@ exports.deleteGoal = async (req,res,next) => {
   try {
     const old = await model.getGoalById(req.params.id);
     if (!old) throw createError(404,'Fitness goal not found');
+
+    // Check ownership (only the user who owns the goal or admin can delete)
+    if (old.userId !== req.user.sub && req.user.role !== 'admin') {
+      throw createError(403, 'Access denied');
+    }
     await model.deleteGoal(req.params.id);
     res.json({ success:true, message:'Fitness goal deleted successfully' });
   } catch(err){ next(err) }
+};
+
+exports.getProgressSummary = async (req, res, next) => {
+  try {
+    const userId = req.params.userId;
+    
+    // Check authorization: users can only access their own progress, admins can access any
+    if (userId !== req.user.sub && req.user.role !== 'admin') {
+      throw createError(403, 'Access denied');
+    }
+    
+    const goals = await model.getGoalsByUserId(userId);
+    const summary = {
+      totalGoals: goals.length,
+      activeGoals: goals.filter(g => new Date(g.startDate) <= new Date() && new Date(g.endDate) >= new Date()).length,
+      completedGoals: goals.filter(g => g.currentValue >= g.targetValue).length
+    };
+    
+    res.json({ success: true, data: { goals, summary } });
+  } catch(err) { next(err) }
 };
