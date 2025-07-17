@@ -23,9 +23,21 @@ async function getNutritionLogById(id) {
   return fileService.getById(COLL, id);
 }
 
-async function getNutritionLogsByUserId(userId) {
+async function getNutritionLogsByUserId(userId, dateFilter = {}) {
   const all = await fileService.getAll(COLL);
-  return all.filter(l=>l.userId===userId);
+  let filtered = all.filter(l => l.userId === userId);
+  
+  // Apply date filtering if provided
+  if (dateFilter.start || dateFilter.end) {
+    filtered = filtered.filter(log => {
+      const logDate = new Date(log.date);
+      if (dateFilter.start && logDate < new Date(dateFilter.start)) return false;
+      if (dateFilter.end && logDate > new Date(dateFilter.end)) return false;
+      return true;
+    });
+  }
+  
+  return filtered;
 }
 
 async function createNutritionLog(data) {

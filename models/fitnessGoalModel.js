@@ -65,10 +65,20 @@ const updateGoal = async (id,data) => {
 
 const deleteGoal = (id) => cache.remove(id);
 
+const getActiveGoalsByUserId = async (userId) => {
+  const allGoals = await cache.getAll();
+  return allGoals.filter(goal => 
+    goal.userId === userId && 
+    goal.status !== 'completed' && 
+    goal.status !== 'cancelled'
+  );
+};
+
 module.exports = {
   validateGoal,
   getAllGoals,
   getGoalsByUserId: getGoalsByUser,
+  getActiveGoalsByUserId,
   getGoalById,
   filterGoals,
   createGoal,

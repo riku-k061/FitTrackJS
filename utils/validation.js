@@ -89,4 +89,82 @@ function validateUser(userData, existingUsers = [], currentUserId = null) {
   return { isValid: errors.length === 0, errors };
 }
 
-module.exports = { validateUser, validateWorkout };
+function validateData(data, schema) {
+  const errors = [];
+  
+  for (const [field, rules] of Object.entries(schema)) {
+    const value = data[field];
+    
+    // Check required fields
+    if (rules.required && (value === undefined || value === null || value === '')) {
+      errors.push(`${field} is required`);
+      continue;
+    }
+    
+    // Skip validation if value is not provided and not required
+    if (value === undefined || value === null) {
+      continue;
+    }
+    
+    // Type validation
+    if (rules.type) {
+      const expectedType = rules.type;
+      let isValidType = false;
+      
+      switch (expectedType) {
+        case 'string':
+          isValidType = typeof value === 'string';
+          break;
+        case 'number':
+          isValidType = typeof value === 'number' && !isNaN(value);
+          break;
+        case 'boolean':
+          isValidType = typeof value === 'boolean';
+          break;
+        case 'array':
+          isValidType = Array.isArray(value);
+          break;
+        case 'object':
+          isValidType = typeof value === 'object' && !Array.isArray(value) && value !== null;
+          break;
+      }
+      
+      if (!isValidType) {
+        errors.push(`${field} must be a ${expectedType}`);
+        continue;
+      }
+    }
+    
+    // Pattern validation (for strings)
+    if (rules.pattern && typeof value === 'string') {
+      const regex = new RegExp(rules.pattern);
+      if (!regex.test(value)) {
+        errors.push(`${field} format is invalid`);
+      }
+    }
+    
+    // Enum validation
+    if (rules.enum && Array.isArray(rules.enum)) {
+      if (!rules.enum.includes(value)) {
+        errors.push(`${field} must be one of: ${rules.enum.join(', ')}`);
+      }
+    }
+    
+    // Min/Max validation for numbers
+    if (rules.min !== undefined && typeof value === 'number') {
+      if (value < rules.min) {
+        errors.push(`${field} must be at least ${rules.min}`);
+      }
+    }
+    
+    if (rules.max !== undefined && typeof value === 'number') {
+      if (value > rules.max) {
+        errors.push(`${field} must be at most ${rules.max}`);
+      }
+    }
+  }
+  
+  return errors;
+}
+
+module.exports = { validateUser, validateWorkout, validateData };

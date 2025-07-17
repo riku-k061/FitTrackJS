@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const analyticsController = require('../controllers/analyticsController');
-const { authenticate } = require('../middleware/authMiddleware');
+const authenticate = require('../middleware/authMiddleware');
 
 router.use(authenticate);
 
@@ -22,5 +22,8 @@ router.get('/:userId/anomalies', analyticsController.getAnomalies);
 
 // multimetric anomaly detection
 router.get('/:userId/anomalies/multimetric', analyticsController.getMultimetricAnomalies);
+
+// download analytics in CSV or PDF format
+router.get('/:userId/download', analyticsController.downloadAnalytics);
 
 module.exports = router;
