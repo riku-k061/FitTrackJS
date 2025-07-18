@@ -5,6 +5,7 @@ const workoutRoutes = require('./routes/workoutRoutes');
 const nutritionRoutes = require('./routes/nutritionRoutes');
 const fitnessGoalRoutes = require('./routes/fitnessGoalRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
+const socialShareRoutes = require('./routes/socialShareRoutes');
 const errorHandler = require('./middleware/errorHandler');
 const { buildIndexes } = require('./utils/indexingUtils');
 
@@ -30,5 +31,6 @@ app.use('/workouts', workoutRoutes);
 app.use('/api/nutrition', nutritionRoutes);
 app.use('/api/goals', fitnessGoalRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/shares', socialShareRoutes);
 app.use(errorHandler);
 module.exports = app;
