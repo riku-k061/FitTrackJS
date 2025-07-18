@@ -47,6 +47,13 @@ const invalidateUserCache = (userId) => {
 };
 
 /**
+ * Helper: clear all cache (for testing)
+ */
+const clearAnalyticsCache = () => {
+  analyticsCache.clear();
+};
+
+/**
  * GET /api/analytics/:userId/download?format=csv|pdf
  * Export analytics data in CSV or PDF format.
  */
@@ -171,17 +178,13 @@ exports.getUserAnalytics = async (req, res, next) => {
       }
     };
 
-    // Only set the cache after the response is fully sent and after a short delay
-    res.on('finish', () => {
-      setTimeout(() => {
-        analyticsCache.set(cacheKey, {
-          data: result.data,
-          timestamp: Date.now()
-        });
-      }, 10);
+    // Set the cache immediately after computing the data
+    analyticsCache.set(cacheKey, {
+      data: result.data,
+      timestamp: Date.now()
     });
+    
     res.json(result);
-    // Do not return here, let the response finish naturally
   } catch (err) {
     next(err);
   }
@@ -414,3 +417,6 @@ exports.getMultimetricAnomalies = async (req, res, next) => {
     next(err);
   }
 };
+
+// Export cache clearing function for testing
+exports.clearAnalyticsCache = clearAnalyticsCache;

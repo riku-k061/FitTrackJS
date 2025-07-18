@@ -4,6 +4,7 @@ const app = require('../../app');
 const fileService = require('../../utils/fileService');
 const { v4: uuidv4 } = require('uuid');
 const userCacheUtils = require('../../utils/userCacheUtils');
+const analyticsController = require('../../controllers/analyticsController');
 jest.mock('../../utils/userCacheUtils', () => ({
   ...jest.requireActual('../../utils/userCacheUtils'),
   userExists: jest.fn(async () => true)
@@ -99,6 +100,9 @@ describe('Analytics API Integration Tests', () => {
   });
 
   it('caches analytics on second request', async () => {
+    // Clear cache before test to ensure clean state
+    analyticsController.clearAnalyticsCache();
+    
     const first = await request(app).get(`/api/analytics/${testUser.id}`)
       .set('Authorization', `Bearer ${authToken}`);
     expect(first.body.fromCache).toBe(false);
