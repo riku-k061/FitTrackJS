@@ -2,6 +2,11 @@ const fs = require('fs').promises;
 const path = require('path');
 const config = require('../config/config');
 
+// Helper function to get the full path to a data file
+function getDataFilePath(filename) {
+  return path.join(config.dataPath || 'data', filename);
+}
+
 // In-memory cache, write queue, locks and timers
 const fileCache = new Map();
 const writeQueue = {};
@@ -187,6 +192,7 @@ module.exports = {
   flushAllWrites,
   readDataFile,
   writeDataFile,
+  getDataFilePath,
   fileCache,
   onUpdate,
   offUpdate

@@ -10,10 +10,10 @@ const {
   getScheduledNotifications,
   cancelScheduledNotification
 } = require('../controllers/notificationController');
-const { authenticate } = require('../middleware/authMiddleware');
+const jwtMiddleware = require('../middleware/authMiddleware');
 
 const router = express.Router();
-router.use(authenticate);
+router.use(jwtMiddleware);
 
 router.get('/',                   getAllNotifications);
 router.get('/:id',                getNotificationById);

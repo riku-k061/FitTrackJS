@@ -7,7 +7,7 @@ const {
   dequeueNotification
 } = require('../utils/notificationQueueService');
 
-const notifSvc = createResourceService('notifications', notificationSchema);
+const notifSvc = createResourceService('notifications');
 
 async function getAllNotifications(req, res) {
   try { res.json(await notifSvc.getAll()); }

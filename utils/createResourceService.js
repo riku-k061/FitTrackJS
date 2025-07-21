@@ -1,8 +1,9 @@
 const fs = require('fs').promises;
-const { getDataFilePath } = require('./fileUtils');
+const path = require('path');
+const config = require('../config/config');
 
 function createResourceService(resourceName) {
-  const file = getDataFilePath(`${resourceName}.json`);
+  const file = path.join(config.dataPath || 'data', `${resourceName}.json`);
   return {
     async getAll() {
       const txt = await fs.readFile(file, 'utf8');

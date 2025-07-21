@@ -7,12 +7,20 @@ const { initializeWebSocketServer } = require('./utils/websocketService');
 const PORT = config.port;
 
 console.log(`Using bcrypt salt rounds: ${config.saltRounds}`);
-const server = app.listen(PORT, () => {
-  console.log(`FitTrackJS server running on port ${PORT}`);
-});
 
-// Initialize WebSocket server
-initializeWebSocketServer(server);
+// Only start the server if not in test environment
+let server;
+if (process.env.NODE_ENV !== 'test') {
+  server = app.listen(PORT, () => {
+    console.log(`FitTrackJS server running on port ${PORT}`);
+  });
+  
+  // Initialize WebSocket server
+  initializeWebSocketServer(server);
+} else {
+  // For tests, create a mock server object
+  server = { close: () => {} };
+}
 
 async function gracefulShutdown() {
   console.log('Shutdown signal received, flushing data...');

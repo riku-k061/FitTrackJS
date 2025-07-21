@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 30
+    },
+    "auditLog": "D:\\work\\turing\\FitTrackJS\\fit-track-js\\logs\\.4cb44996a1d8ebb63cc564785ac9f70de41bf387-audit.json",
+    "files": [
+        {
+            "date": 1753069100373,
+            "name": "D:\\work\\turing\\FitTrackJS\\fit-track-js\\logs\\validation-errors-2025-07-21.log",
+            "hash": "a6dd3b3b7de326745afa052370bdcabf640ecee9355b38b7a748cbfd61096ec3"
+        }
+    ],
+    "hashType": "sha256"
+}
