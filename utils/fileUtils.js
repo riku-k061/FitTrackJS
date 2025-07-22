@@ -31,7 +31,8 @@ async function readJSONFile(filename) {
     return JSON.parse(JSON.stringify(fileCache.get(filename)));
   }
 
-  const filePath = path.join(config.dataPath, filename);
+  // If filename is absolute, use it directly, otherwise join with dataPath
+  const filePath = path.isAbsolute(filename) ? filename : path.join(config.dataPath, filename);
   try {
     const raw = await fs.readFile(filePath, 'utf8');
     const data = JSON.parse(raw);
@@ -61,7 +62,8 @@ async function processWriteQueue(filename) {
     writeQueue[filename] = [];
     fileCache.set(filename, dataToWrite);
 
-    const filePath = path.join(config.dataPath, filename);
+    // Handle absolute paths correctly
+    const filePath = path.isAbsolute(filename) ? filename : path.join(config.dataPath, filename);
     await fs.mkdir(path.dirname(filePath), { recursive: true });
     await fs.writeFile(filePath, JSON.stringify(dataToWrite, null, 2), 'utf8');
   } catch (err) {

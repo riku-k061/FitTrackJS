@@ -7,6 +7,7 @@ const fitnessGoalRoutes = require('./routes/fitnessGoalRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
 const socialShareRoutes = require('./routes/socialShareRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
+const stravaConnectorRoutes = require('./routes/stravaConnectorRoutes');
 const errorHandler = require('./middleware/errorHandler');
 const { buildIndexes } = require('./utils/indexingUtils');
 
@@ -34,5 +35,6 @@ app.use('/api/goals', fitnessGoalRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/shares', socialShareRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/', stravaConnectorRoutes);
 app.use(errorHandler);
 module.exports = app;
