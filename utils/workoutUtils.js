@@ -105,11 +105,29 @@ async function prepareDeleteUserWorkouts(userId) {
   };
 }
 
+async function getWorkoutsByUserId(userId, dateFilter = {}) {
+  const workouts = await readDataFile(WORKOUT_FILE);
+  let filtered = workouts.filter(w => w.userId === userId);
+  
+  // Apply date filtering if provided
+  if (dateFilter.start || dateFilter.end) {
+    filtered = filtered.filter(workout => {
+      const workoutDate = new Date(workout.date);
+      if (dateFilter.start && workoutDate < new Date(dateFilter.start)) return false;
+      if (dateFilter.end && workoutDate > new Date(dateFilter.end)) return false;
+      return true;
+    });
+  }
+  
+  return filtered;
+}
+
 module.exports = {
   getWorkouts,
   getWorkoutById,
   createWorkout,
   updateWorkout,
   deleteWorkout,
-  prepareDeleteUserWorkouts
+  prepareDeleteUserWorkouts,
+  getWorkoutsByUserId
 };

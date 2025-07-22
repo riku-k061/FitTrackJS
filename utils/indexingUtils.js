@@ -118,4 +118,68 @@ function invalidateIndex(filePath) {
   indexes.delete(filePath);
 }
 
-module.exports = { buildIndexes, getFilteredData, invalidateIndex };
+const indexCache = {
+  nutritionLogs: null,
+  timestamps: { nutritionLogs: null }
+};
+
+async function createIndexes(collection) {
+  const filePath = path.join(__dirname, `../data/${collection}.json`);
+  const stats = await fs.stat(filePath);
+  const mtime = stats.mtime.getTime();
+
+  if (indexCache[collection] && indexCache.timestamps[collection] === mtime) {
+    return indexCache[collection];
+  }
+
+  const data = JSON.parse(await fs.readFile(filePath, 'utf8'));
+  if (collection === 'nutritionLogs') {
+    const byUserId = {}, byDate = {}, byMealType = {};
+    data.forEach(log => {
+      (byUserId[log.userId] ||= []).push(log);
+      (byDate[log.date] ||= []).push(log);
+      (byMealType[log.mealType] ||= []).push(log);
+    });
+    indexCache[collection] = { all: data, byUserId, byDate, byMealType };
+  } else {
+    // generic id index
+    const byId = {};
+    data.forEach(item => byId[item.id] = item);
+    indexCache[collection] = { all: data, byId };
+  }
+  indexCache.timestamps[collection] = mtime;
+  return indexCache[collection];
+}
+
+async function getById(collection, id) {
+  const idx = await createIndexes(collection);
+  return idx.byId ? idx.byId[id] : undefined;
+}
+
+async function getNutritionLogs(filters = {}, limit = 10, offset = 0) {
+  const idx = await createIndexes('nutritionLogs');
+  let list = [...idx.all];
+
+  if (filters.userId)    list = idx.byUserId[filters.userId] || [];
+  if (filters.dateFrom || filters.dateTo) {
+    list = list.filter(log => {
+      const d = new Date(log.date);
+      if (filters.dateFrom && new Date(filters.dateFrom) > d) return false;
+      if (filters.dateTo   && new Date(filters.dateTo)   < d) return false;
+      return true;
+    });
+  }
+  if (filters.mealType)  list = list.filter(l => l.mealType === filters.mealType);
+
+  list.sort((a,b) => new Date(b.date) - new Date(a.date));
+  const page = list.slice(offset, offset + limit);
+
+  return {
+    logs: page,
+    total: list.length,
+    limit, offset,
+    hasMore: offset + page.length < list.length
+  };
+}
+
+module.exports = { buildIndexes, getFilteredData, invalidateIndex, createIndexes, getById, getNutritionLogs };

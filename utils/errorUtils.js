@@ -49,11 +49,28 @@ class AuthorizationError extends AppError {
   }
 }
 
+function createError(statusCode, message, details = null) {
+  switch (statusCode) {
+    case 400: return new ValidationError(message, details);
+    case 404: return new NotFoundError(message);
+    case 401: return new AuthenticationError(message);
+    case 403: return new AuthorizationError(message);
+    default: return new AppError(message, statusCode, 'general', details);
+  }
+}
+
+function createErrorResponse(res, statusCode, message, details = null) {
+  const error = createError(statusCode, message, details);
+  return res.status(statusCode).json(error.toJSON());
+}
+
 module.exports = {
   AppError,
   ValidationError,
   DatabaseError,
   NotFoundError,
   AuthenticationError,
-  AuthorizationError
+  AuthorizationError,
+  createError,
+  createErrorResponse
 };
