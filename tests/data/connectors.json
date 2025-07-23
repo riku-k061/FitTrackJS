@@ -1,0 +1,11 @@
+[
+  {
+    "id": "448b8c25-fa12-44bf-aed5-db8e074b0bfb",
+    "userId": "1bf3c93f-9477-4ed4-ad51-7288c8b15ceb",
+    "provider": "strava",
+    "accessToken": "tkn",
+    "refreshToken": "ref",
+    "expiresAt": "2025-07-22T07:29:26.866Z",
+    "lastSync": 1753169306881
+  }
+]

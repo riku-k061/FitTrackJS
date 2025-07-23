@@ -1,5 +1,7 @@
 // tests/helpers/authHelper.js
 const jwt = require('jsonwebtoken');
+const request = require('supertest');
+const app = require('../../app');
 const { mockUserId, mockAdminId } = require('../setup');
 
 // Use the same JWT secret as the application
@@ -47,8 +49,54 @@ function generateExpiredToken() {
   );
 }
 
+// Get auth token by registering/logging in a user
+async function getAuthToken(email, password) {
+  try {
+    // First try to login
+    const loginResponse = await request(app)
+      .post('/auth/login')
+      .send({ email, password });
+    
+    if (loginResponse.status === 200) {
+      return loginResponse.body.data.tokens.accessToken;
+    }
+    
+    // If login fails, try to register
+    const registerResponse = await request(app)
+      .post('/users')
+      .send({
+        username: email.split('@')[0],
+        email,
+        password,
+        name: 'Test User',
+        birthDate: '1990-01-01',
+        sex: 'female',
+        height: 170,
+        weight: 65,
+        timezone: 'UTC'
+      });
+    
+    if (registerResponse.status === 201) {
+      // Now try to login again
+      const loginResponse2 = await request(app)
+        .post('/auth/login')
+        .send({ email, password });
+      
+      if (loginResponse2.status === 200) {
+        return loginResponse2.body.data.tokens.accessToken;
+      }
+    }
+    
+    throw new Error('Failed to get auth token');
+  } catch (error) {
+    console.error('Error getting auth token:', error);
+    throw error;
+  }
+}
+
 module.exports = {
   generateUserToken,
   generateAdminToken,
-  generateExpiredToken
+  generateExpiredToken,
+  getAuthToken
 };

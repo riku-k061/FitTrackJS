@@ -2,6 +2,11 @@ const fs = require('fs').promises;
 const path = require('path');
 const config = require('../config/config');
 
+// Helper function to get the full path to a data file
+function getDataFilePath(filename) {
+  return path.join(config.dataPath || 'data', filename);
+}
+
 // In-memory cache, write queue, locks and timers
 const fileCache = new Map();
 const writeQueue = {};
@@ -26,7 +31,8 @@ async function readJSONFile(filename) {
     return JSON.parse(JSON.stringify(fileCache.get(filename)));
   }
 
-  const filePath = path.join(config.dataPath, filename);
+  // If filename is absolute, use it directly, otherwise join with dataPath
+  const filePath = path.isAbsolute(filename) ? filename : path.join(config.dataPath, filename);
   try {
     const raw = await fs.readFile(filePath, 'utf8');
     const data = JSON.parse(raw);
@@ -56,7 +62,8 @@ async function processWriteQueue(filename) {
     writeQueue[filename] = [];
     fileCache.set(filename, dataToWrite);
 
-    const filePath = path.join(config.dataPath, filename);
+    // Handle absolute paths correctly
+    const filePath = path.isAbsolute(filename) ? filename : path.join(config.dataPath, filename);
     await fs.mkdir(path.dirname(filePath), { recursive: true });
     await fs.writeFile(filePath, JSON.stringify(dataToWrite, null, 2), 'utf8');
   } catch (err) {
@@ -187,6 +194,7 @@ module.exports = {
   flushAllWrites,
   readDataFile,
   writeDataFile,
+  getDataFilePath,
   fileCache,
   onUpdate,
   offUpdate
